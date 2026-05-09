@@ -34,7 +34,7 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token payload');
       }
 
-      const isSessionActive = this.authService.isSessionActive(
+      const isSessionActive = await this.authService.isSessionActive(
         payload.sub,
         payload.sessionId,
       );

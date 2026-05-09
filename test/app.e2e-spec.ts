@@ -23,26 +23,32 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+    return request(app.getHttpServer()).get('/').expect(404);
   });
 
-  it('auth flow should login with invitation code and protect /auth/me with JWT', async () => {
-    const inviteCodeResponse = await request(app.getHttpServer())
-      .post('/auth/invite-codes')
-      .send({ ttlSeconds: 1200 })
+  it('auth flow should signup, signin, refresh and logout', async () => {
+    const unique = Date.now();
+
+    await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        email: `guilherme+${unique}@example.com`,
+        username: `guilherme${unique}`,
+        password: 'testpassword',
+      })
       .expect(201);
 
-    const inviteCode = inviteCodeResponse.body.code as string;
-
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ code: inviteCode, displayName: 'guilherme' })
+    const signinResponse = await request(app.getHttpServer())
+      .post('/auth/signin')
+      .send({ password: 'testpassword', username: `guilherme${unique}` })
       .expect(201);
 
-    const accessToken = loginResponse.body.accessToken as string;
+    const refreshCookie = signinResponse.headers['set-cookie']?.[0] as
+      | string
+      | undefined;
+    expect(refreshCookie).toBeDefined();
+
+    const accessToken = signinResponse.body.accessToken as string;
     expect(accessToken).toBeTruthy();
 
     await request(app.getHttpServer())
@@ -51,18 +57,31 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body.id).toBeDefined();
-        expect(body.displayName).toBe('guilherme');
+        expect(body.username).toBe(`guilherme${unique}`);
       });
+
+    const refreshResponse = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', refreshCookie as string)
+      .expect(201);
+
+    const rotatedCookie = refreshResponse.headers['set-cookie']?.[0] as
+      | string
+      | undefined;
+    expect(rotatedCookie).toBeDefined();
+
+    const refreshedAccessToken = refreshResponse.body.accessToken as string;
+    expect(refreshedAccessToken).toBeTruthy();
 
     await request(app.getHttpServer())
       .post('/auth/logout')
-      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Authorization', `Bearer ${refreshedAccessToken}`)
       .expect(201)
       .expect({ success: true });
 
     await request(app.getHttpServer())
-      .get('/auth/me')
-      .set('Authorization', `Bearer ${accessToken}`)
+      .post('/auth/refresh')
+      .set('Cookie', rotatedCookie as string)
       .expect(401);
   });
 

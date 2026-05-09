@@ -4,6 +4,6 @@ export interface AuthResponseDto {
   expiresIn: number;
   user: {
     id: string;
-    displayName: string;
+    username: string;
   };
 }

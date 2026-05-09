@@ -1,6 +1,8 @@
 export const DEFAULT_JWT_SECRET = 'dev-only-secret-change-me';
 export const DEFAULT_JWT_EXPIRES_IN_SECONDS = 3600;
 export const DEFAULT_INVITE_TTL_SECONDS = 900;
+export const DEFAULT_REFRESH_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7;
+export const REFRESH_TOKEN_COOKIE_NAME = 'rt_chat_refresh_token';
 
 export function readPositiveIntEnv(
   varName: string,
