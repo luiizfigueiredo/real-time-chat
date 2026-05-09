@@ -1,3 +1,5 @@
+import { envValues } from '../shared/env-values';
+
 export const DEFAULT_JWT_SECRET = 'dev-only-secret-change-me';
 export const DEFAULT_JWT_EXPIRES_IN_SECONDS = 3600;
 export const DEFAULT_INVITE_TTL_SECONDS = 900;
@@ -20,4 +22,28 @@ export function readPositiveIntEnv(
   }
 
   return parsed;
+}
+
+export function getCookieOptions(): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'none' | 'lax' | 'strict';
+} {
+  const isProd = envValues.NODE_ENV === 'production';
+
+  const secure = envValues.COOKIE_SECURE
+    ? envValues.COOKIE_SECURE === 'true'
+    : isProd;
+
+  const sameSite = envValues.COOKIE_SAME_SITE
+    ? (envValues.COOKIE_SAME_SITE as 'none' | 'lax' | 'strict')
+    : isProd
+      ? 'none'
+      : 'lax';
+
+  return {
+    httpOnly: true,
+    secure,
+    sameSite,
+  };
 }

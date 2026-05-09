@@ -28,6 +28,18 @@ export const users = pgTable(
   ],
 );
 
+export const inviteCodes = pgTable(
+  'invite_codes',
+  {
+    id: uuid('id').primaryKey(),
+    code: varchar('code', { length: 64 }).notNull(),
+    expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
+    consumedAt: timestamp('consumed_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex('invite_codes_code_unique').on(table.code)],
+);
+
 export const refreshTokens = pgTable(
   'refresh_tokens',
   {
@@ -94,6 +106,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   roomsAsUserA: many(rooms, { relationName: 'room_user_a' }),
   roomsAsUserB: many(rooms, { relationName: 'room_user_b' }),
   sentMessages: many(messages),
+}));
+
+export const inviteCodesRelations = relations(inviteCodes, () => ({
+  // no direct relation to user for now
 }));
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({

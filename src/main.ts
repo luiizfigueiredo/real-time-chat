@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { envValues } from './shared/env-values';
 
@@ -13,6 +14,8 @@ async function bootstrap() {
     origin: corsOrigin?.length ? corsOrigin : false,
     credentials: true,
   });
+
+  app.use(cookieParser());
 
   app.useGlobalPipes(
     new ValidationPipe({

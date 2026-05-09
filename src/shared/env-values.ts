@@ -18,4 +18,7 @@ export const envValues = {
   JWT_EXPIRES_IN_SECONDS: process.env.JWT_EXPIRES_IN_SECONDS ?? '3600',
   CORS_ORIGIN: process.env.CORS_ORIGIN,
   PORT: process.env.PORT ?? '5000',
+  NODE_ENV: process.env.NODE_ENV ?? 'development',
+  COOKIE_SECURE: process.env.COOKIE_SECURE,
+  COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE,
 };

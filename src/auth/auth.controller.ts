@@ -19,6 +19,7 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import {
   DEFAULT_REFRESH_EXPIRES_IN_SECONDS,
   REFRESH_TOKEN_COOKIE_NAME,
+  getCookieOptions,
   readPositiveIntEnv,
 } from './auth.constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -35,7 +36,9 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('invite-codes')
-  issueInviteCode(@Body() dto: IssueInviteCodeDto): InviteCodeResponseDto {
+  async issueInviteCode(
+    @Body() dto: IssueInviteCodeDto,
+  ): Promise<InviteCodeResponseDto> {
     return this.authService.issueInviteCode(dto);
   }
 
@@ -89,9 +92,7 @@ export class AuthController {
 
   private setRefreshCookie(response: Response, refreshToken: string): void {
     response.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      ...getCookieOptions(),
       maxAge: this.refreshTtlSeconds * 1000,
       path: '/auth',
     });
@@ -99,33 +100,18 @@ export class AuthController {
 
   private clearRefreshCookie(response: Response): void {
     response.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      ...getCookieOptions(),
       path: '/auth',
     });
   }
 
   private readRefreshToken(request: Request): string {
-    const cookiesHeader = request.headers.cookie;
-    if (!cookiesHeader) {
-      throw new UnauthorizedException('Refresh token cookie is missing');
-    }
-
-    const cookies = cookiesHeader.split(';').map((entry) => entry.trim());
-    const refreshCookie = cookies.find((entry) =>
-      entry.startsWith(`${REFRESH_TOKEN_COOKIE_NAME}=`),
-    );
-
-    if (!refreshCookie) {
-      throw new UnauthorizedException('Refresh token cookie is missing');
-    }
-
-    const refreshToken = decodeURIComponent(refreshCookie.split('=')[1] ?? '');
+    const refreshToken = (
+      request.cookies as Record<string, string> | undefined
+    )?.[REFRESH_TOKEN_COOKIE_NAME];
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token cookie is invalid');
+      throw new UnauthorizedException('Refresh token cookie is missing');
     }
-
     return refreshToken;
   }
 }

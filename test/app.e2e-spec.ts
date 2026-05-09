@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 
@@ -12,6 +13,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -29,12 +31,21 @@ describe('AppController (e2e)', () => {
   it('auth flow should signup, signin, refresh and logout', async () => {
     const unique = Date.now();
 
+    const inviteResponse = await request(app.getHttpServer())
+      .post('/auth/invite-codes')
+      .send({})
+      .expect(201);
+
+    const inviteCode = inviteResponse.body.code as string;
+    expect(inviteCode).toBeTruthy();
+
     await request(app.getHttpServer())
       .post('/auth/signup')
       .send({
         email: `guilherme+${unique}@example.com`,
         username: `guilherme${unique}`,
         password: 'testpassword',
+        inviteCode,
       })
       .expect(201);
 

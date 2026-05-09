@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { createHash, randomBytes, randomUUID } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull, gt } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE } from '../db/db.provider';
 import * as schema from '../db/schema';
@@ -21,11 +21,7 @@ import {
   DEFAULT_REFRESH_EXPIRES_IN_SECONDS,
   readPositiveIntEnv,
 } from './auth.constants';
-
-interface InviteCodeRecord {
-  expiresAt: number;
-  consumedAt?: number;
-}
+import { throwError } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -41,25 +37,30 @@ export class AuthService {
     'REFRESH_EXPIRES_IN_SECONDS',
     DEFAULT_REFRESH_EXPIRES_IN_SECONDS,
   );
-  private readonly inviteCodes = new Map<string, InviteCodeRecord>();
 
   constructor(
     private readonly jwtService: JwtService,
     @Inject(DRIZZLE) private readonly db: NodePgDatabase<typeof schema>,
   ) {
-    this.seedInviteCodes();
+    void this.seedInviteCodes();
   }
 
-  issueInviteCode(dto: IssueInviteCodeDto = {}): InviteCodeResponseDto {
+  async issueInviteCode(
+    dto: IssueInviteCodeDto = {},
+  ): Promise<InviteCodeResponseDto> {
     const ttlSeconds = dto.ttlSeconds ?? this.defaultInviteTtlSeconds;
     const code = this.normalizeCode(dto.code ?? this.generateInviteCode());
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
-    const expiresAt = Date.now() + ttlSeconds * 1000;
-    this.inviteCodes.set(code, { expiresAt });
+    await this.db.insert(schema.inviteCodes).values({
+      id: randomUUID(),
+      code,
+      expiresAt,
+    });
 
     return {
       code,
-      expiresAt: new Date(expiresAt).toISOString(),
+      expiresAt: expiresAt.toISOString(),
       ttlSeconds,
     };
   }
@@ -67,47 +68,70 @@ export class AuthService {
   async createUser(dto: signupDto): Promise<CreateUserResponseDto> {
     const { username, email, password } = dto;
 
-    const [emailTaken] = await this.db
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.email, email))
-      .limit(1);
+    // await this.validateAndConsumeInviteCode(inviteCode);
 
-    if (emailTaken) {
-      throw new BaseError(authError.AUTH_002);
-    }
+    const hashedPassword = await hash(password, 12);
+    const userInviteCode = `USER-${randomBytes(4).toString('hex').toUpperCase()}`;
 
-    const [existingUsername] = await this.db
-      .select({ id: schema.users.id })
+    const userNameAlreadyExists = await this.db
+      .select()
       .from(schema.users)
       .where(eq(schema.users.username, username))
       .limit(1);
 
-    if (existingUsername) {
+    console.log(userNameAlreadyExists);
+
+    if (userNameAlreadyExists.length != 0) {
       throw new BaseError(authError.AUTH_005);
     }
 
-    const hashedPassword = await hash(password, 12);
+    const emailAlreadyExists = await this.db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .limit(1);
 
-    const inviteCode = `USER-${randomBytes(4).toString('hex').toUpperCase()}`;
-    const [newUser] = await this.db
-      .insert(schema.users)
-      .values({
-        id: randomUUID(),
-        email,
-        username,
-        passwordHash: hashedPassword,
-        inviteCode,
-      })
-      .returning();
+    if (emailAlreadyExists.length != 0) {
+      throw new BaseError(authError.AUTH_002);
+    }
 
-    return {
-      id: newUser.id,
-      email: newUser.email,
-      username: newUser.username,
-      inviteCode: newUser.inviteCode,
-      createdAt: newUser.createdAt.toISOString(),
-    };
+    try {
+      const [newUser] = await this.db
+        .insert(schema.users)
+        .values({
+          id: randomUUID(),
+          email,
+          username,
+          passwordHash: hashedPassword,
+          inviteCode: userInviteCode,
+        })
+        .returning();
+
+      return {
+        id: newUser.id,
+        email: newUser.email,
+        username: newUser.username,
+        inviteCode: newUser.inviteCode,
+        createdAt: newUser.createdAt.toISOString(),
+      };
+    } catch (error) {
+      // PostgreSQL unique violation (23505)
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === '23505'
+      ) {
+        const detail = (error as { detail?: string }).detail ?? '';
+        if (detail.includes('email')) {
+          throw new BaseError(authError.AUTH_002);
+        }
+        if (detail.includes('username')) {
+          throw new BaseError(authError.AUTH_005);
+        }
+      }
+      throw error;
+    }
   }
 
   async login(
@@ -176,7 +200,7 @@ export class AuthService {
       .limit(1);
 
     if (!user) {
-      throw new UnauthorizedException('User not found for token');
+      throw new BaseError(authError.AUTH_004);
     }
 
     return {
@@ -214,6 +238,10 @@ export class AuthService {
     }
 
     if (session.tokenHash !== refreshTokenHash) {
+      // Possible token reuse: invalidate the session immediately
+      await this.db
+        .delete(schema.refreshTokens)
+        .where(eq(schema.refreshTokens.id, session.id));
       throw new UnauthorizedException('Refresh token is invalid');
     }
 
@@ -310,26 +338,33 @@ export class AuthService {
     return true;
   }
 
-  private validateInviteCode(code: string): void {
-    const inviteCode = this.inviteCodes.get(code);
+  private async validateAndConsumeInviteCode(code: string): Promise<void> {
+    const normalizedCode = this.normalizeCode(code);
+    const now = new Date();
+
+    const [inviteCode] = await this.db
+      .select()
+      .from(schema.inviteCodes)
+      .where(
+        and(
+          eq(schema.inviteCodes.code, normalizedCode),
+          isNull(schema.inviteCodes.consumedAt),
+          gt(schema.inviteCodes.expiresAt, now),
+        ),
+      )
+      .limit(1);
+
     if (!inviteCode) {
-      throw new UnauthorizedException('Invalid invitation code');
+      throw new UnauthorizedException('Invalid or expired invitation code');
     }
 
-    if (inviteCode.expiresAt <= Date.now()) {
-      this.inviteCodes.delete(code);
-      throw new UnauthorizedException('Invitation code is expired');
-    }
-
-    if (inviteCode.consumedAt) {
-      throw new UnauthorizedException('Invitation code already used');
-    }
-
-    inviteCode.consumedAt = Date.now();
-    this.inviteCodes.set(code, inviteCode);
+    await this.db
+      .update(schema.inviteCodes)
+      .set({ consumedAt: now })
+      .where(eq(schema.inviteCodes.id, inviteCode.id));
   }
 
-  private seedInviteCodes(): void {
+  private async seedInviteCodes(): Promise<void> {
     const envCodes = process.env.AUTH_BOOTSTRAP_CODES?.split(',')
       .map((value) => this.normalizeCode(value))
       .filter((value) => value.length > 0);
@@ -337,7 +372,15 @@ export class AuthService {
     const seedCodes = envCodes?.length ? envCodes : ['CHAT-DEMO-2026'];
 
     for (const code of seedCodes) {
-      this.issueInviteCode({ code, ttlSeconds: 7 * 24 * 60 * 60 });
+      const exists = await this.db
+        .select({ id: schema.inviteCodes.id })
+        .from(schema.inviteCodes)
+        .where(eq(schema.inviteCodes.code, code))
+        .limit(1);
+
+      if (exists.length === 0) {
+        await this.issueInviteCode({ code, ttlSeconds: 7 * 24 * 60 * 60 });
+      }
     }
   }
 
