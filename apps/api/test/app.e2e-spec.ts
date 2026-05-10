@@ -4,6 +4,19 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 
+type InviteCodeResponse = {
+  code: string;
+};
+
+type SignInResponse = {
+  accessToken: string;
+};
+
+type AuthMeResponse = {
+  id: string;
+  username: string;
+};
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
 
@@ -36,7 +49,8 @@ describe('AppController (e2e)', () => {
       .send({})
       .expect(201);
 
-    const inviteCode = inviteResponse.body.code as string;
+    const inviteBody = inviteResponse.body as InviteCodeResponse;
+    const inviteCode = inviteBody.code;
     expect(inviteCode).toBeTruthy();
 
     await request(app.getHttpServer())
@@ -59,7 +73,8 @@ describe('AppController (e2e)', () => {
       | undefined;
     expect(refreshCookie).toBeDefined();
 
-    const accessToken = signinResponse.body.accessToken as string;
+    const signinBody = signinResponse.body as SignInResponse;
+    const accessToken = signinBody.accessToken;
     expect(accessToken).toBeTruthy();
 
     await request(app.getHttpServer())
@@ -67,8 +82,9 @@ describe('AppController (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200)
       .expect(({ body }) => {
-        expect(body.id).toBeDefined();
-        expect(body.username).toBe(`guilherme${unique}`);
+        const authMeBody = body as AuthMeResponse;
+        expect(authMeBody.id).toBeDefined();
+        expect(authMeBody.username).toBe(`guilherme${unique}`);
       });
 
     const refreshResponse = await request(app.getHttpServer())
@@ -81,7 +97,8 @@ describe('AppController (e2e)', () => {
       | undefined;
     expect(rotatedCookie).toBeDefined();
 
-    const refreshedAccessToken = refreshResponse.body.accessToken as string;
+    const refreshBody = refreshResponse.body as SignInResponse;
+    const refreshedAccessToken = refreshBody.accessToken;
     expect(refreshedAccessToken).toBeTruthy();
 
     await request(app.getHttpServer())
@@ -97,6 +114,8 @@ describe('AppController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 });

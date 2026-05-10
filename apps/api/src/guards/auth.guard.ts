@@ -9,6 +9,15 @@ import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from '../shared/config/constants';
 import { envValues } from '../shared/env-values';
 
+type JwtPayload = {
+  sub?: string;
+};
+
+type RequestWithAuthHeader = {
+  headers: { authorization?: string };
+  userId?: string;
+};
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -26,15 +35,19 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithAuthHeader>();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
       throw new UnauthorizedException();
     }
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: envValues.JWT_SECRET,
       });
+
+      if (!payload.sub) {
+        throw new UnauthorizedException();
+      }
 
       request.userId = payload.sub;
     } catch {

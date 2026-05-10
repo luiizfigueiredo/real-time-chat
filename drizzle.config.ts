@@ -10,7 +10,7 @@ const databaseUrl =
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './src/db/schema.ts',
+  schema: './apps/api/src/shared/db/schema.ts',
   out: './drizzle',
   dbCredentials: {
     url: databaseUrl,

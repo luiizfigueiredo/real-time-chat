@@ -4,14 +4,14 @@ import { compare, hash } from 'bcrypt';
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { eq, and, isNull, gt } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { DRIZZLE } from '../db/db.provider';
-import * as schema from '../db/schema';
+import { DRIZZLE } from '../../shared/db/db.provider';
+import * as schema from '../../shared/db/schema';
 import { CreateUserResponseDto } from './dto/create-user-response.dto';
 import { InviteCodeResponseDto } from './dto/invite-code-response.dto';
 import { IssueInviteCodeDto } from './dto/issue-invite-code.dto';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
-import { BaseError } from '../shared/error/base-error';
-import { authError } from '../shared/error/messages/auth.error';
+import { BaseError } from '../../shared/error/base-error';
+import { authError } from '../../shared/error/messages/auth.error';
 import { signupDto } from './dto/signupDto.dto';
 import { signinDto } from './dto/signinDto.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -21,7 +21,6 @@ import {
   DEFAULT_REFRESH_EXPIRES_IN_SECONDS,
   readPositiveIntEnv,
 } from './auth.constants';
-import { throwError } from 'rxjs';
 
 @Injectable()
 export class AuthService {

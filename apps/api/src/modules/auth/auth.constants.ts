@@ -1,4 +1,4 @@
-import { envValues } from '../shared/env-values';
+import { envValues } from '../../shared/env-values';
 
 export const DEFAULT_JWT_SECRET = 'dev-only-secret-change-me';
 export const DEFAULT_JWT_EXPIRES_IN_SECONDS = 3600;

@@ -2,7 +2,7 @@ import { Provider } from '@nestjs/common';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from './schema';
-import { envValues } from '../shared/env-values';
+import { envValues } from '../env-values';
 
 export const DRIZZLE = 'DRIZZLE';
 

@@ -1,0 +1,91 @@
+pipeline:
+  name: cd-realtime-chat-template
+  identifier: cd_realtime_chat_template
+  projectIdentifier: real_time_chat
+  orgIdentifier: default
+  tags:
+    state: disabled_by_default
+  variables:
+    - name: DEPLOY_TARGET
+      type: String
+      value: <+input>.allowedValues(kubernetes,vm)
+    - name: DEPLOY_ENV
+      type: String
+      value: <+input>.allowedValues(staging,prod)
+  stages:
+    - stage:
+        name: Build and Package
+        identifier: build_and_package
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  name: Install Dependencies
+                  identifier: install_dependencies
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:20
+                    command: npm ci
+              - step:
+                  name: Build
+                  identifier: build
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:20
+                    command: npm run build
+              - step:
+                  name: Package (placeholder)
+                  identifier: package
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:20
+                    command: |
+                      echo "Packaging strategy will be defined with deploy target"
+    - stage:
+        name: Deploy
+        identifier: deploy
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Deploy Placeholder
+                  identifier: deploy_placeholder
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          echo "Deploy target: <+pipeline.variables.DEPLOY_TARGET>"
+                          echo "Environment: <+pipeline.variables.DEPLOY_ENV>"
+                          echo "Replace this step with real deploy implementation"
+    - stage:
+        name: Approval
+        identifier: approval
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Manual Approval
+                  identifier: manual_approval
+                  type: HarnessApproval
+                  spec:
+                    approvalMessage: "Approve deploy to <+pipeline.variables.DEPLOY_ENV>?"
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - account._account_all_users
+                      minimumCount: 1
+                      disallowPipelineExecutor: false

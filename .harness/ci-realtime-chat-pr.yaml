@@ -1,0 +1,166 @@
+pipeline:
+  name: ci-realtime-chat-pr
+  identifier: ci_realtime_chat_pr
+  projectIdentifier: real_time_chat
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: account.github_connector
+        repoName: real-time-chat
+        build: <+input>
+  stages:
+    - stage:
+        name: CI
+        identifier: CI
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  name: Install Dependencies
+                  identifier: install_dependencies
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: |
+                      npm ci
+                    caching:
+                      enabled: true
+                      paths:
+                        - /root/.npm
+              - step:
+                  name: Start Postgres and Redis
+                  identifier: start_services
+                  type: Background
+                  spec:
+                    shell: Sh
+                    image: docker:27-dind
+                    privileged: true
+                    command: |
+                      apk add --no-cache docker-cli-compose
+                      cat <<'COMPOSE' > docker-compose.ci.yml
+                      services:
+                        postgres:
+                          image: postgres:17
+                          container_name: ci-postgres
+                          environment:
+                            POSTGRES_DB: $POSTGRES_DB
+                            POSTGRES_USER: $POSTGRES_USER
+                            POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+                          ports:
+                            - "<+pipeline.variables.POSTGRES_PORT>:5432"
+                          healthcheck:
+                            test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+                            interval: 5s
+                            timeout: 5s
+                            retries: 20
+
+                        redis:
+                          image: redis:7
+                          container_name: ci-redis
+                          ports:
+                            - "<+pipeline.variables.REDIS_PORT>:6379"
+                          healthcheck:
+                            test: ["CMD", "redis-cli", "ping"]
+                            interval: 5s
+                            timeout: 5s
+                            retries: 20
+                      COMPOSE
+
+                      docker compose -f docker-compose.ci.yml up -d
+
+                      until [ "$(docker inspect -f '{{.State.Health.Status}}' ci-postgres 2>/dev/null)" = "healthy" ]; do sleep 2; done
+                      until [ "$(docker inspect -f '{{.State.Health.Status}}' ci-redis 2>/dev/null)" = "healthy" ]; do sleep 2; done
+                    envVariables:
+                      POSTGRES_DB: <+secrets.getValue("POSTGRES_DB")>
+                      POSTGRES_USER: <+secrets.getValue("POSTGRES_USER")>
+                      POSTGRES_PASSWORD: <+secrets.getValue("POSTGRES_PASSWORD")>
+              - step:
+                  name: Prepare CI Env
+                  identifier: prepare_ci_env
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: |
+                      cat <<'ENV' > .env
+                      POSTGRES_DB=$POSTGRES_DB
+                      POSTGRES_USER=$POSTGRES_USER
+                      POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+                      DB_HOST=127.0.0.1
+                      DB_PORT=<+pipeline.variables.POSTGRES_PORT>
+                      REDIS_PORT=<+pipeline.variables.REDIS_PORT>
+                      PORT=<+pipeline.variables.APP_PORT>
+                      NODE_ENV=test
+                      COOKIE_SECURE=false
+                      COOKIE_SAME_SITE=lax
+                      JWT_SECRET=$JWT_SECRET
+                      JWT_EXPIRES_IN_SECONDS=$JWT_EXPIRES_IN_SECONDS
+                      CORS_ORIGIN=http://localhost:<+pipeline.variables.APP_PORT>
+                      ENV
+                  envVariables:
+                    POSTGRES_DB: <+secrets.getValue("POSTGRES_DB")>
+                    POSTGRES_USER: <+secrets.getValue("POSTGRES_USER")>
+                    POSTGRES_PASSWORD: <+secrets.getValue("POSTGRES_PASSWORD")>
+                    JWT_SECRET: <+secrets.getValue("JWT_SECRET")>
+                    JWT_EXPIRES_IN_SECONDS: <+secrets.getValue("JWT_EXPIRES_IN_SECONDS")>
+              - step:
+                  name: Drizzle Migrate
+                  identifier: drizzle_migrate
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: npm run db:migrate
+              - step:
+                  name: Lint
+                  identifier: lint
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: npm run lint:ci
+              - step:
+                  name: Unit Tests
+                  identifier: unit_tests
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: npm run test
+              - step:
+                  name: E2E Tests
+                  identifier: e2e_tests
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: npm run test:e2e
+              - step:
+                  name: Build
+                  identifier: build
+                  type: Run
+                  spec:
+                    shell: Sh
+                    image: node:<+pipeline.variables.NODE_VERSION>
+                    command: npm run build
+        variables:
+          - name: NODE_VERSION
+            type: String
+            value: "20"
+          - name: APP_PORT
+            type: String
+            value: "3000"
+          - name: REDIS_PORT
+            type: String
+            value: "6379"
+          - name: POSTGRES_PORT
+            type: String
+            value: "5432"

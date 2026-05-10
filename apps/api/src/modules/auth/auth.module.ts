@@ -4,7 +4,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { DEFAULT_JWT_EXPIRES_IN_SECONDS } from './auth.constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { envValues } from '../shared/env-values';
+import { envValues } from '../../shared/env-values';
 
 @Module({
   imports: [
@@ -19,6 +19,6 @@ import { envValues } from '../shared/env-values';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}
