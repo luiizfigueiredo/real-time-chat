@@ -237,7 +237,6 @@ export class AuthService {
     }
 
     if (session.tokenHash !== refreshTokenHash) {
-      // Possible token reuse: invalidate the session immediately
       await this.db
         .delete(schema.refreshTokens)
         .where(eq(schema.refreshTokens.id, session.id));
