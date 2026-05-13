@@ -18,6 +18,7 @@ import type { AuthSocket } from './interfaces/auth-socket.interface';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { envValues } from '../../shared/env-values';
+import { chatError } from '../../shared/error/messages/chat.error';
 
 function roomChannel(roomId: string): string {
   return `room:${roomId}`;
@@ -41,7 +42,7 @@ function userChannel(userId: string): string {
   new ValidationPipe({
     whitelist: true,
     transform: true,
-    exceptionFactory: (errors) => new WsException(errors),
+    exceptionFactory: (errors) => new WsException({ errors }),
   }),
 )
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -102,7 +103,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const user = client.data.user;
     if (!user) {
-      throw new WsException('Não autenticado');
+      throw new WsException(chatError.CHAT_001);
     }
 
     const room = await this.chatService.getOrCreateRoom(
@@ -124,7 +125,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const user = client.data.user;
     if (!user) {
-      throw new WsException('Não autenticado');
+      throw new WsException(chatError.CHAT_001);
     }
 
     const { message, room } = await this.chatService.createMessage(
