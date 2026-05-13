@@ -23,7 +23,7 @@ import {
   readPositiveIntEnv,
 } from './auth.constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
+import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 @Controller('auth')

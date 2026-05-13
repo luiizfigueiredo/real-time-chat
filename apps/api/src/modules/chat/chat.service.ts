@@ -1,14 +1,11 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { randomUUID } from 'crypto';
 import * as schema from '@api/shared/db/schema';
 import { DRIZZLE } from '@api/shared/db/db.provider';
+import { BaseError } from '../../shared/error/base-error';
+import { chatError } from '../../shared/error/messages/chat.error';
 
 @Injectable()
 export class ChatService {
@@ -22,9 +19,7 @@ export class ChatService {
 
   async getOrCreateRoom(requesterId: string, peerId: string) {
     if (requesterId === peerId) {
-      throw new BadRequestException(
-        'Não é possível criar uma conversa consigo mesmo',
-      );
+      throw new BaseError(chatError.CHAT_002);
     }
 
     const [peer] = await this.db
@@ -34,7 +29,7 @@ export class ChatService {
       .limit(1);
 
     if (!peer) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new BaseError(chatError.CHAT_003);
     }
 
     const [userAId, userBId] = this.normalizePair(requesterId, peerId);
@@ -88,7 +83,7 @@ export class ChatService {
     const trimmedContent = content.trim();
 
     if (!trimmedContent) {
-      throw new BadRequestException('Mensagem não pode estar vazia');
+      throw new BaseError(chatError.CHAT_004);
     }
 
     const [message] = await this.db
