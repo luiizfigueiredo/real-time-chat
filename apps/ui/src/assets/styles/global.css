@@ -1,0 +1,341 @@
+@import './tokens.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-0);
+  color: var(--text);
+}
+
+body {
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
+
+.mono {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* ── Shared form atoms ─────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12.5px;
+  color: var(--text-mute);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+}
+
+.field-hint {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap .icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.input-wrap .icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.input-wrap .icon-right {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  cursor: default;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  padding: 0;
+}
+
+.input-wrap .icon-right:hover {
+  color: var(--text);
+  background: var(--bg-3);
+}
+
+.input-wrap .icon-right svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.input {
+  width: 100%;
+  background: var(--bg-1);
+  color: var(--text);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 12px 14px 12px 42px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.input:hover { border-color: var(--line); }
+
+.input:focus {
+  border-color: var(--accent-line);
+  background: var(--bg-2);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.input::placeholder { color: var(--text-dim); }
+.input.with-right { padding-right: 44px; }
+
+.input.error {
+  border-color: oklch(0.72 0.17 25 / 0.55);
+  box-shadow: 0 0 0 3px oklch(0.72 0.17 25 / 0.12);
+}
+
+.field-error {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.field-error::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+}
+
+/* ── Buttons ───────────────────────────────────────── */
+
+.btn {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.08s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.2) inset,
+    0 8px 24px -10px var(--accent);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-primary:active { transform: translateY(0.5px); }
+
+.btn-primary:disabled {
+  background: var(--bg-3);
+  color: var(--text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line-soft);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-3);
+  border-color: var(--line);
+}
+
+/* ── Checkbox ──────────────────────────────────────── */
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-mute);
+  cursor: default;
+  user-select: none;
+}
+
+.check input { display: none; }
+
+.check .box {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.check input:checked + .box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.check input:checked + .box::after {
+  content: "";
+  width: 8px;
+  height: 5px;
+  border-left: 1.6px solid var(--accent-ink);
+  border-bottom: 1.6px solid var(--accent-ink);
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+/* ── Link ──────────────────────────────────────────── */
+
+.link {
+  font-size: 13px;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 1px;
+  background: none;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  font-family: inherit;
+  cursor: default;
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.link:hover {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+.link.muted { color: var(--text-mute); }
+
+/* ── OR divider ────────────────────────────────────── */
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--text-dim);
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.or-divider::before, .or-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+/* ── SSO grid ──────────────────────────────────────── */
+
+.sso {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sso .btn-ghost {
+  font-size: 13px;
+  padding: 11px 12px;
+}
+
+.sso .btn-ghost svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Spinner ───────────────────────────────────────── */
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Animations ────────────────────────────────────── */
+
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-3px); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 3px oklch(0.78 0.16 155 / 0.18); }
+  50%       { box-shadow: 0 0 0 5px oklch(0.78 0.16 155 / 0.05); }
+}
