@@ -79,10 +79,6 @@ async function submit() {
       <AppBrand />
     </div>
 
-    <div class="form-eyebrow">
-      <span class="step">01</span>
-      <span>POST /auth/signup</span>
-    </div>
     <h2 class="form-title">Criar sua conta</h2>
     <p class="form-sub">É grátis e leva menos de um minuto.</p>
 

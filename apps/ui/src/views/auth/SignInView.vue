@@ -48,7 +48,7 @@ async function submit() {
       `Sessão iniciada como ${username.value}`,
       '200 OK · accessToken emitido',
     );
-    router.push('/');
+    router.push({ name: 'chat' });
   } catch (err) {
     serverError.value =
       err instanceof Error ? err.message : 'Usuário ou senha inválidos.';
@@ -64,10 +64,6 @@ async function submit() {
       <AppBrand />
     </div>
 
-    <div class="form-eyebrow">
-      <span class="step">01</span>
-      <span>POST /auth/signin</span>
-    </div>
     <h2 class="form-title">Bem-vindo de volta</h2>
     <p class="form-sub">
       Entre com seu usuário e senha para continuar a conversa.
@@ -83,7 +79,8 @@ async function submit() {
           type="text"
           class="input"
           :class="{ error: !!errUser }"
-          placeholder="seu_usuario"
+          q
+          placeholder="username"
           autocomplete="username"
           spell-check="false"
           @blur="touched.username = true"
@@ -127,7 +124,10 @@ async function submit() {
       <span v-if="submitting" class="spinner" />
       <template v-if="submitting">Autenticando…</template>
       <template v-else
-        >Entrar <AppIcon name="arrowRight" style="width: 16px; height: 16px"
+        >Entrar
+        <AppIcon
+          name="arrowRight"
+          style="width: 16px; height: 16px; cursor: pointer"
       /></template>
     </button>
 

@@ -34,7 +34,7 @@ const messages = [
       <AppBrand />
 
       <div class="hero">
-        <div class="hero-eyebrow">Mensageria 1:1 em tempo real</div>
+        <div class="hero-eyebrow">Mensagens em tempo real</div>
         <h1>Converse com quem importa, <em>sem espera</em>.</h1>
         <p>
           NestJS + Socket.IO entregando mensagens com latência baixa, sessões

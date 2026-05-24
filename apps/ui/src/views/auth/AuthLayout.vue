@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import LeftPanel from './components/LeftPanel.vue'
-import AppToast from './components/AppToast.vue'
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import LeftPanel from './components/LeftPanel.vue';
+import AppToast from './components/AppToast.vue';
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
 const topBar = computed(() => {
-  if (route.name === 'login') {
-    return { text: 'Novo por aqui?', action: { label: 'Criar conta', to: 'register' } }
-  }
-  if (route.name === 'register') {
-    return { text: 'Já tem conta?', action: { label: 'Entrar', to: 'login' } }
-  }
-  return { text: 'Precisa de ajuda?', action: { label: 'suporte@chat.app', to: null } }
-})
+  return {
+    text: 'Precisa de ajuda?',
+    action: { label: 'suporte@chat.app', to: null },
+  };
+});
 </script>
 
 <template>
@@ -54,8 +51,16 @@ const topBar = computed(() => {
   display: grid;
   grid-template-columns: 1.05fr 1fr;
   background:
-    radial-gradient(1200px 700px at -10% -10%, oklch(0.32 0.08 285 / 0.18), transparent 60%),
-    radial-gradient(900px 600px at 110% 110%, oklch(0.32 0.10 240 / 0.14), transparent 55%),
+    radial-gradient(
+      1200px 700px at -10% -10%,
+      oklch(0.32 0.08 285 / 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 600px at 110% 110%,
+      oklch(0.32 0.1 240 / 0.14),
+      transparent 55%
+    ),
     var(--bg-0);
 }
 
@@ -84,7 +89,7 @@ const topBar = computed(() => {
   padding: 24px 40px 48px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1500px) {
   .shell {
     grid-template-columns: 1fr;
   }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
-defineProps<{ active: 'login' | 'register' }>()
+defineProps<{ active: 'login' | 'register' }>();
 
-const router = useRouter()
+const router = useRouter();
 </script>
 
 <template>
@@ -46,7 +46,7 @@ const router = useRouter()
   font-size: 13px;
   font-weight: 500;
   border-radius: 7px;
-  cursor: default;
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 

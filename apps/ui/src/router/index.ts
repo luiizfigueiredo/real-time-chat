@@ -1,4 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const guestOnlyRoutes = new Set(['login', 'register', 'forgot-password', 'forgot-password-sent', 'reset-password'])
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,7 +41,25 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/chat',
+      name: 'chat',
+      component: () => import('@/views/chat/ChatView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
+})
+
+router.beforeEach((to) => {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return { name: 'login' }
+  }
+
+  if (authStore.isAuthenticated && to.name && guestOnlyRoutes.has(String(to.name))) {
+    return { name: 'chat' }
+  }
 })
 
 export default router

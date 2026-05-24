@@ -78,8 +78,6 @@ export class AuthService {
       .where(eq(schema.users.username, username))
       .limit(1);
 
-    console.log(userNameAlreadyExists);
-
     if (userNameAlreadyExists.length != 0) {
       throw new BaseError(authError.AUTH_005);
     }
