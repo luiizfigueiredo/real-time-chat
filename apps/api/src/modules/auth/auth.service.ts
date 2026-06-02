@@ -67,8 +67,6 @@ export class AuthService {
   async createUser(dto: signupDto): Promise<CreateUserResponseDto> {
     const { username, email, password } = dto;
 
-    // await this.validateAndConsumeInviteCode(inviteCode);
-
     const hashedPassword = await hash(password, 12);
     const userInviteCode = `USER-${randomBytes(4).toString('hex').toUpperCase()}`;
 
@@ -112,7 +110,6 @@ export class AuthService {
         createdAt: newUser.createdAt.toISOString(),
       };
     } catch (error) {
-      // PostgreSQL unique violation (23505)
       if (
         typeof error === 'object' &&
         error !== null &&

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppIcon from './AppIcon.vue'
+import AppIcon from './AppIcon.vue';
 </script>
 
 <template>
@@ -9,7 +9,7 @@ import AppIcon from './AppIcon.vue'
     </div>
     <div>
       <span class="brand-name">
-        real-time-chat<span class="mono">v0.0.1</span>
+        Real Time Chat<span class="mono">v0.0.1</span>
       </span>
     </div>
   </div>
@@ -28,17 +28,23 @@ import AppIcon from './AppIcon.vue'
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent) 0%, oklch(0.55 0.22 280) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    oklch(0.55 0.22 280) 100%
+  );
   display: grid;
   place-items: center;
-  box-shadow: 0 6px 24px -8px var(--accent), inset 0 1px 0 oklch(1 0 0 / 0.25);
+  box-shadow:
+    0 6px 24px -8px var(--accent),
+    inset 0 1px 0 oklch(1 0 0 / 0.25);
   position: relative;
   color: white;
   flex-shrink: 0;
 }
 
 .brand-mark::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   border-radius: 10px;

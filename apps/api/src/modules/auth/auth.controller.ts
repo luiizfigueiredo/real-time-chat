@@ -8,6 +8,7 @@ import {
   UseGuards,
   Post,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { signupDto } from './dto/signupDto.dto';
@@ -36,6 +37,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('invite-codes')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async issueInviteCode(
     @Body() dto: IssueInviteCodeDto,
   ): Promise<InviteCodeResponseDto> {
@@ -43,11 +45,13 @@ export class AuthController {
   }
 
   @Post('signup')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   signup(@Body() dto: signupDto): Promise<CreateUserResponseDto> {
     return this.authService.createUser(dto);
   }
 
   @Post('signin')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async signin(
     @Body() dto: signinDto,
     @Res({ passthrough: true }) response: Response,
@@ -58,6 +62,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
@@ -71,6 +76,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Get('me')
   me(@CurrentUser() authenticatedUser: AuthenticatedUser): Promise<{
     id: string;
@@ -80,6 +86,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Post('logout')
   async logout(
     @CurrentUser() authenticatedUser: AuthenticatedUser,

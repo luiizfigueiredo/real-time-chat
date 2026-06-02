@@ -19,4 +19,9 @@ export const chatError = {
     message: 'Message content cannot be empty.',
     status: 400,
   },
+  CHAT_005: {
+    code: 'CHAT_005',
+    message: 'Room not found or you are not a member.',
+    status: 403,
+  },
 };

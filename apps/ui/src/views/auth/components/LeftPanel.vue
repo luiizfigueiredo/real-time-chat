@@ -34,7 +34,6 @@ const messages = [
       <AppBrand />
 
       <div class="hero">
-        <div class="hero-eyebrow">Mensagens em tempo real</div>
         <h1>Converse com quem importa, <em>sem espera</em>.</h1>
         <p>
           NestJS + Socket.IO entregando mensagens com latência baixa, sessões
@@ -73,7 +72,6 @@ const messages = [
         <span class="dot" />
         API · operacional
       </div>
-      <span>p95 · 42ms</span>
       <span style="margin-left: auto">© 2026</span>
     </div>
   </div>

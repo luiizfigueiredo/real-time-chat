@@ -1,36 +1,40 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useValidation } from '@/composables/useValidation'
-import AppIcon from './components/AppIcon.vue'
-import AuthField from './components/AuthField.vue'
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useValidation } from '@/composables/useValidation';
+import AppIcon from './components/AppIcon.vue';
+import AuthField from './components/AuthField.vue';
 
-const router = useRouter()
-const { validateEmail } = useValidation()
+const router = useRouter();
+const { validateEmail } = useValidation();
 
-const email = ref('')
-const touched = ref(false)
-const submitting = ref(false)
+const email = ref('');
+const touched = ref(false);
+const submitting = ref(false);
 
-const err = computed(() => touched.value ? validateEmail(email.value) : null)
-const canSubmit = computed(() => !validateEmail(email.value) && email.value.length > 0 && !submitting.value)
+const err = computed(() => (touched.value ? validateEmail(email.value) : null));
+const canSubmit = computed(
+  () =>
+    !validateEmail(email.value) && email.value.length > 0 && !submitting.value,
+);
 
 async function submit() {
-  touched.value = true
-  if (!canSubmit.value) return
+  touched.value = true;
+  if (!canSubmit.value) return;
 
-  submitting.value = true
-  await new Promise((r) => setTimeout(r, 900))
-  submitting.value = false
+  submitting.value = true;
+  await new Promise((r) => setTimeout(r, 900));
+  submitting.value = false;
 
-  router.push({ name: 'forgot-password-sent', query: { email: email.value } })
+  router.push({ name: 'forgot-password-sent', query: { email: email.value } });
 }
 </script>
 
 <template>
   <form class="form-card" novalidate @submit.prevent="submit">
     <button type="button" class="back" @click="router.push({ name: 'login' })">
-      <AppIcon name="arrowLeft" style="width:14px;height:14px;" /> Voltar para entrar
+      <AppIcon name="arrowLeft" style="width: 14px; height: 14px" /> Voltar para
+      entrar
     </button>
 
     <div class="form-eyebrow">
@@ -38,7 +42,10 @@ async function submit() {
       <span>POST /auth/password/forgot</span>
     </div>
     <h2 class="form-title">Redefinir senha</h2>
-    <p class="form-sub">Informe o e-mail vinculado à sua conta. Enviaremos um link seguro para você criar uma nova senha.</p>
+    <p class="form-sub">
+      Informe o e-mail vinculado à sua conta. Enviaremos um link seguro para
+      você criar uma nova senha.
+    </p>
 
     <AuthField label="Email" :error="err">
       <div class="input-wrap">
@@ -48,7 +55,7 @@ async function submit() {
           type="email"
           class="input"
           :class="{ error: !!err }"
-          placeholder="voce@dominio.com"
+          placeholder="Email@dominio.com"
           autocomplete="email"
           autofocus
           spell-check="false"
@@ -57,15 +64,27 @@ async function submit() {
       </div>
     </AuthField>
 
-    <button type="submit" class="btn btn-primary" :disabled="!canSubmit" style="margin-top: 8px;">
+    <button
+      type="submit"
+      class="btn btn-primary"
+      :disabled="!canSubmit"
+      style="margin-top: 8px"
+    >
       <span v-if="submitting" class="spinner" />
       <template v-if="submitting">Enviando…</template>
-      <template v-else>Enviar link de redefinição <AppIcon name="send" style="width:16px;height:16px;" /></template>
+      <template v-else
+        >Enviar link de redefinição
+        <AppIcon name="send" style="width: 16px; height: 16px"
+      /></template>
     </button>
 
-    <div class="form-footer" style="margin-top: 18px;">
+    <div class="form-footer" style="margin-top: 18px">
       Lembrou da senha?{{ ' ' }}
-      <button type="button" class="link" @click="router.push({ name: 'login' })">
+      <button
+        type="button"
+        class="link"
+        @click="router.push({ name: 'login' })"
+      >
         Entrar
       </button>
     </div>
@@ -73,7 +92,10 @@ async function submit() {
 </template>
 
 <style scoped>
-.form-card { width: 100%; max-width: 400px; }
+.form-card {
+  width: 100%;
+  max-width: 400px;
+}
 
 .back {
   display: inline-flex;
@@ -89,7 +111,9 @@ async function submit() {
   font-family: inherit;
 }
 
-.back:hover { color: var(--text); }
+.back:hover {
+  color: var(--text);
+}
 
 .form-eyebrow {
   font-family: 'Geist Mono', monospace;
@@ -103,7 +127,9 @@ async function submit() {
   gap: 8px;
 }
 
-.form-eyebrow .step { color: var(--accent); }
+.form-eyebrow .step {
+  color: var(--accent);
+}
 
 .form-title {
   font-size: 26px;
@@ -125,7 +151,12 @@ async function submit() {
   color: var(--text-mute);
 }
 
-.form-footer .link { font-weight: 500; }
+.form-footer .link {
+  font-weight: 500;
+}
 
-.btn svg { width: 16px; height: 16px; }
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
 </style>

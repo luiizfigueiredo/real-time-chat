@@ -28,4 +28,6 @@ export const envValues = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   COOKIE_SECURE: process.env.COOKIE_SECURE,
   COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE,
+  THROTTLE_TTL: process.env.THROTTLE_TTL ?? '60000',
+  THROTTLE_LIMIT: process.env.THROTTLE_LIMIT ?? '100',
 };

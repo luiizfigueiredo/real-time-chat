@@ -1,0 +1,2 @@
+export const DEFAULT_THROTTLE_TTL = 60000;
+export const DEFAULT_THROTTLE_LIMIT = 100;

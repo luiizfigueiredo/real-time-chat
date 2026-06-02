@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
@@ -22,6 +23,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   findAll(
     @Query() dto: SearchUsersDto,
     @CurrentUser() authenticatedUser: AuthenticatedUser,
@@ -30,11 +32,13 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   findById(@Param('id') id: string): Promise<UserProfileDto> {
     return this.usersService.findById(id);
   }
 
   @Patch('me')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   updateMe(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Body() dto: UpdateUserDto,
@@ -43,6 +47,7 @@ export class UsersController {
   }
 
   @Patch('me/password')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   changePassword(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,

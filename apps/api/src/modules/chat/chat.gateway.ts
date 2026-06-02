@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { WsException } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import type { Server } from 'socket.io';
@@ -97,6 +98,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:join')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async handleJoin(
     @ConnectedSocket() client: AuthSocket,
     @MessageBody() dto: JoinRoomDto,
@@ -119,6 +121,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:send')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async handleSend(
     @ConnectedSocket() client: AuthSocket,
     @MessageBody() dto: SendMessageDto,

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, lt, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { randomUUID } from 'crypto';
 import * as schema from '@api/shared/db/schema';
@@ -114,5 +114,99 @@ export class ChatService {
       .from(schema.rooms)
       .where(eq(schema.rooms.userBId, userId));
     return [...rooms, ...roomsB].map((r) => r.id);
+  }
+
+  async listUserRooms(userId: string) {
+    const userRoomsA = await this.db
+      .select({
+        id: schema.rooms.id,
+        peerUserId: schema.rooms.userBId,
+        peerUsername: schema.users.username,
+        lastMessageAt: schema.rooms.lastMessageAt,
+        createdAt: schema.rooms.createdAt,
+      })
+      .from(schema.rooms)
+      .innerJoin(schema.users, eq(schema.users.id, schema.rooms.userBId))
+      .where(eq(schema.rooms.userAId, userId));
+
+    const userRoomsB = await this.db
+      .select({
+        id: schema.rooms.id,
+        peerUserId: schema.rooms.userAId,
+        peerUsername: schema.users.username,
+        lastMessageAt: schema.rooms.lastMessageAt,
+        createdAt: schema.rooms.createdAt,
+      })
+      .from(schema.rooms)
+      .innerJoin(schema.users, eq(schema.users.id, schema.rooms.userAId))
+      .where(eq(schema.rooms.userBId, userId));
+
+    const allRooms = [...userRoomsA, ...userRoomsB].sort(
+      (a, b) =>
+        (b.lastMessageAt?.getTime() ?? 0) - (a.lastMessageAt?.getTime() ?? 0),
+    );
+
+    return allRooms.map((room) => ({
+      id: room.id,
+      peerUser: { id: room.peerUserId, username: room.peerUsername },
+      lastMessageAt: room.lastMessageAt?.toISOString() ?? null,
+      createdAt: room.createdAt.toISOString(),
+    }));
+  }
+
+  async getMessages(
+    userId: string,
+    roomId: string,
+    limit: number = 50,
+    cursor?: string,
+  ) {
+    const [room] = await this.db
+      .select({
+        id: schema.rooms.id,
+        userAId: schema.rooms.userAId,
+        userBId: schema.rooms.userBId,
+      })
+      .from(schema.rooms)
+      .where(eq(schema.rooms.id, roomId))
+      .limit(1);
+
+    if (!room || (userId !== room.userAId && userId !== room.userBId)) {
+      throw new BaseError(chatError.CHAT_005);
+    }
+
+    const cursorDate = cursor ? new Date(cursor) : undefined;
+
+    const queryLimit = limit + 1;
+
+    const messages = await this.db
+      .select()
+      .from(schema.messages)
+      .where(
+        and(
+          eq(schema.messages.roomId, roomId),
+          cursorDate ? lt(schema.messages.sentAt, cursorDate) : undefined,
+        ),
+      )
+      .orderBy(desc(schema.messages.sentAt))
+      .limit(queryLimit);
+
+    const hasMore = messages.length > queryLimit;
+    const sliced = hasMore ? messages.slice(0, limit) : messages;
+    const nextCursor =
+      hasMore && sliced.length > 0
+        ? sliced[sliced.length - 1].sentAt.toISOString()
+        : null;
+
+    return {
+      messages: sliced.map((m) => ({
+        id: m.id,
+        roomId: m.roomId,
+        senderId: m.senderId,
+        content: m.content,
+        isRead: m.isRead,
+        sentAt: m.sentAt.toISOString(),
+      })),
+      nextCursor,
+    };
   }
 }

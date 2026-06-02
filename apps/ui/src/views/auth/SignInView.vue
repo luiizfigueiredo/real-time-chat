@@ -80,7 +80,7 @@ async function submit() {
           class="input"
           :class="{ error: !!errUser }"
           q
-          placeholder="username"
+          placeholder="Username"
           autocomplete="username"
           spell-check="false"
           @blur="touched.username = true"

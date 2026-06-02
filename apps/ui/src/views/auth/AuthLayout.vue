@@ -6,35 +6,13 @@ import AppToast from './components/AppToast.vue';
 
 const route = useRoute();
 const router = useRouter();
-
-const topBar = computed(() => {
-  return {
-    text: 'Precisa de ajuda?',
-    action: { label: 'suporte@chat.app', to: null },
-  };
-});
 </script>
 
 <template>
   <div class="shell">
     <LeftPanel class="left-panel" />
-
+ 
     <div class="right">
-      <div class="right-top">
-        <span>{{ topBar.text }}</span>
-        <button
-          v-if="topBar.action.to"
-          type="button"
-          class="link"
-          @click="router.push({ name: topBar.action.to! })"
-        >
-          {{ topBar.action.label }}
-        </button>
-        <a v-else href="mailto:suporte@chat.app" class="link">
-          {{ topBar.action.label }}
-        </a>
-      </div>
-
       <div class="form-wrap">
         <RouterView />
       </div>
